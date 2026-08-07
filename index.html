@@ -1012,7 +1012,7 @@ var SUPABASE_URL = "https://ruanhyzlhohvuvwmqlkx.supabase.co";
 var SUPABASE_ANON_KEY = "sb_publishable_2EUhLDFPmW78EzgnWFq9Og_xG4DnF9y";
 var ADMIN_EMAIL = "axrorovasl@gmail.com";
 
-var sb = (SUPABASE_URL.indexOf("PASTE_")!==0 && window.supabase)
+var sb = (SUPABASE_URL.indexOf("https://")!==0 && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 var currentUser = null;
