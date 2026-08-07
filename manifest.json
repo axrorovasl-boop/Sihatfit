@@ -1,0 +1,16 @@
+{
+  "name": "Тренер ИИ",
+  "short_name": "Тренер ИИ",
+  "description": "Дневник тренировок с ИИ-разбором, питанием и напоминаниями",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14151A",
+  "theme_color": "#14151A",
+  "lang": "ru",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
