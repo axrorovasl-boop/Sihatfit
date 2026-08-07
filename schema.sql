@@ -106,11 +106,11 @@ create policy "admin upload exercise videos" on storage.objects
 
 drop policy if exists "admin update exercise videos" on storage.objects;
 create policy "admin update exercise videos" on storage.objects
-  for update using (bucket_id = 'exercise-videos' and auth.email() = 'ADMIN_EMAIL');
+  for update using (bucket_id = 'exercise-videos' and auth.email() = 'axrorovasl@gmail.com');
 
 drop policy if exists "admin delete exercise videos" on storage.objects;
 create policy "admin delete exercise videos" on storage.objects
-  for delete using (bucket_id = 'exercise-videos' and auth.email() = 'ADMIN_EMAIL');
+  for delete using (bucket_id = 'exercise-videos' and auth.email() = 'axrorovasl@gmail.com');
 
 -- ==========================================================
 -- TAYYOR. Endi index.html ichidagi axrorovasl@gmail.comni ham xuddi shu emailga

@@ -923,8 +923,8 @@ function openTechnique(ex){
       uploadExerciseVideo(ex.name, e.target.files[0]);
     });
   }
-  if(sb){
-    sb.from("exercise_videos").select("video_url").eq("exercise_name", ex.name).maybeSingle().then(function(res){
+  if(supabase){
+    supabase.from("exercise_videos").select("video_url").eq("exercise_name", ex.name).maybeSingle().then(function(res){
       if(res.data && res.data.video_url){
         var slot = document.getElementById("modal-video-slot");
         if(slot) slot.innerHTML = '<video class="modal-video" src="'+res.data.video_url+'" controls playsinline></video>';
@@ -933,16 +933,16 @@ function openTechnique(ex){
   }
 }
 function uploadExerciseVideo(name, file){
-  if(!file || !sb || !currentUser) return;
+  if(!file || !supabase || !currentUser) return;
   var status = document.getElementById("upload-status");
   status.textContent = "Загружаю…";
   var ext = (file.name.split(".").pop() || "mp4").toLowerCase();
   var path = name.replace(/[^a-zA-Zа-яА-Я0-9]+/g, "_")+"_"+Date.now()+"."+ext;
-  sb.storage.from("exercise-videos").upload(path, file, { upsert:true }).then(function(res){
+  supabase.storage.from("exercise-videos").upload(path, file, { upsert:true }).then(function(res){
     if(res.error){ status.textContent = "Ошибка загрузки: "+res.error.message; return; }
-    var pub = sb.storage.from("exercise-videos").getPublicUrl(path);
+    var pub = supabase.storage.from("exercise-videos").getPublicUrl(path);
     var url = pub.data.publicUrl;
-    return sb.from("exercise_videos").upsert(
+    return supabase.from("exercise_videos").upsert(
       { exercise_name:name, video_url:url, uploaded_by:currentUser.email },
       { onConflict:"exercise_name" }
     ).then(function(res2){
@@ -1012,9 +1012,7 @@ var SUPABASE_URL = "https://ruanhyzlhohvuvwmqlkx.supabase.co";
 var SUPABASE_ANON_KEY = "sb_publishable_2EUhLDFPmW78EzgnWFq9Og_xG4DnF9y";
 var ADMIN_EMAIL = "axrorovasl@gmail.com";
 
-var sb = (SUPABASE_URL.indexOf("https://")!==0 && window.supabase)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+var supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 var currentUser = null;
 var saveTimer = null;
 
@@ -1048,11 +1046,11 @@ function setSyncStatus(text, cls, autoHide){
   if(autoHide){ setSyncStatus._t = setTimeout(function(){ el.classList.remove("show"); }, 1800); }
 }
 function saveState(){
-  if(!currentUser || !sb) return;
+  if(!currentUser || !supabase) return;
   clearTimeout(saveTimer);
   setSyncStatus("Сохранение…", "");
   saveTimer = setTimeout(function(){
-    sb.from("user_state").upsert({ user_id: currentUser.id, state: state }, { onConflict:"user_id" })
+    supabase.from("user_state").upsert({ user_id: currentUser.id, state: state }, { onConflict:"user_id" })
       .then(function(res){
         if(res.error){
           console.error(res.error);
@@ -2712,7 +2710,7 @@ function renderLogin(msg){
     var email = document.getElementById("login-email").value.trim();
     var status = document.getElementById("login-status");
     status.textContent = "Отправляю…";
-    sb.auth.signInWithOtp({ email:email, options:{ emailRedirectTo: window.location.origin } }).then(function(res){
+    supabase.auth.signInWithOtp({ email:email, options:{ emailRedirectTo: window.location.origin } }).then(function(res){
       status.textContent = res.error ? "Ошибка: "+res.error.message : "Ссылка отправлена на "+email+" — открой почту и перейди по ней на этом же устройстве.";
     });
   });
@@ -2728,7 +2726,7 @@ function renderNoAccess(){
       '<a class="btn btn-sm" href="tel:'+CONTACT_PHONE+'">📞 '+CONTACT_PHONE+'</a>'+
     '</div>'+
     '<button type="button" class="btn btn-ghost btn-sm" id="logout-btn" style="margin-top:14px">Выйти</button>';
-  document.getElementById("logout-btn").addEventListener("click", function(){ sb.auth.signOut(); });
+  document.getElementById("logout-btn").addEventListener("click", function(){ supabase.auth.signOut(); });
 }
 function showApp(){
   document.getElementById("auth-gate").style.display = "none";
@@ -2748,14 +2746,14 @@ function handleSession(session){
   var isAdmin = email === ADMIN_EMAIL;
   var accessCheck = isAdmin
     ? Promise.resolve({ granted:true })
-    : sb.from("access_grants").select("expires_at").eq("email", email).maybeSingle().then(function(res){
+    : supabase.from("access_grants").select("expires_at").eq("email", email).maybeSingle().then(function(res){
         return { granted: !!(res.data && new Date(res.data.expires_at) > new Date()) };
       });
   accessCheck.then(function(r){
     if(!r.granted){ renderNoAccess(); return; }
-    return sb.from("user_state").select("state").eq("user_id", currentUser.id).maybeSingle().then(function(res){
+    return supabase.from("user_state").select("state").eq("user_id", currentUser.id).maybeSingle().then(function(res){
       state = normalizeState(res.data ? res.data.state : null);
-      if(!res.data){ sb.from("user_state").upsert({ user_id:currentUser.id, state:state }, { onConflict:"user_id" }); }
+      if(!res.data){ supabase.from("user_state").upsert({ user_id:currentUser.id, state:state }, { onConflict:"user_id" }); }
       if(isAdmin) document.getElementById("tab-admin").style.display = "";
       showApp();
       current = loadDraft() || { dayKey:nextDayKey(), date:new Date().toISOString().slice(0,10), calories:null, durationOverride:null, startTs:null, exercises:{}, finishedEx:{}, pendingTransition:null, transitions:[] };
@@ -2764,7 +2762,7 @@ function handleSession(session){
   });
 }
 document.getElementById("btn-logout").addEventListener("click", function(){
-  if(sb) sb.auth.signOut();
+  if(supabase) supabase.auth.signOut();
 });
 
 /* ============================== admin ============================== */
@@ -2777,7 +2775,7 @@ function renderAdmin(){
   var list = document.getElementById("admin-list");
   var countEl = document.getElementById("admin-count");
   countEl.textContent = "Загрузка…";
-  sb.from("access_grants").select("*").order("created_at", { ascending:false }).then(function(res){
+  supabase.from("access_grants").select("*").order("created_at", { ascending:false }).then(function(res){
     var rows = res.data || [];
     countEl.textContent = rows.length + " пользователь" + (rows.length===1?"":(rows.length<5?"я":"ей"));
     if(!rows.length){ list.innerHTML = '<div class="profile-empty">Пока никому не выдан доступ.</div>'; return; }
@@ -2794,7 +2792,7 @@ document.getElementById("grant-form").addEventListener("submit", function(e){
   var months = parseInt(document.getElementById("grant-plan").value, 10);
   var expires = new Date();
   expires.setMonth(expires.getMonth()+months);
-  sb.from("access_grants").upsert({
+  supabase.from("access_grants").upsert({
     email:email, plan:months+"m", expires_at:expires.toISOString(), granted_by:currentUser.email
   }, { onConflict:"email" }).then(function(res){
     if(res.error){ toast("Ошибка: "+res.error.message); return; }
@@ -2807,15 +2805,15 @@ document.getElementById("grant-form").addEventListener("submit", function(e){
 /* ============================== init ============================== */
 
 function initApp(){
-  if(!sb){
+  if(!supabase){
     document.getElementById("auth-box").innerHTML =
       '<div class="auth-title">Тренер ИИ</div>'+
       '<div class="auth-msg">Конфигурация не заполнена. Открой index.html и впиши SUPABASE_URL, SUPABASE_ANON_KEY и ADMIN_EMAIL в начале &lt;script&gt; (ищи PASTE_YOUR_...).</div>';
     return;
   }
   renderAuthLoading();
-  sb.auth.onAuthStateChange(function(event, session){ handleSession(session); });
-  sb.auth.getSession().then(function(res){ handleSession(res.data.session); });
+  supabase.auth.onAuthStateChange(function(event, session){ handleSession(session); });
+  supabase.auth.getSession().then(function(res){ handleSession(res.data.session); });
 }
 
 initApp();
